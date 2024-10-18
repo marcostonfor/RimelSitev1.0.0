@@ -1,0 +1,31 @@
+/**
+ * 
+ */
+package rimelSite.scraping;
+
+/**
+ * 
+ */
+import java.net.URL;
+import java.net.URLConnection;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+
+public class RimelSiteScrapingWeb {
+    private String rssUrl = "https://mascotasdezero.com/rss.php"; // reemplaza con la URL del feed RSS que deseas obtener
+    RimelSiteScrapingWeb(String rssUrl) {
+        this.rssUrl = rssUrl;
+
+    }
+
+}

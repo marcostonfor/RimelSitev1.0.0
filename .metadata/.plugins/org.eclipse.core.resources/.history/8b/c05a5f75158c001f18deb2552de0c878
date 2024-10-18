@@ -1,0 +1,23 @@
+/**
+ * 
+ */
+package rimelSite.scraping;
+
+import org.json.JSONArray;
+
+/**
+ * 
+ */
+public class RimelSiteMain {
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		RimelSiteScrapingWeb rssReader = new RimelSiteScrapingWeb("https://mascotasdezero.com/rss.php");
+        JSONArray rssFeedJson = rssReader.getRssFeedAsJson();
+        System.out.println(rssFeedJson.toString(2));
+	}
+
+}

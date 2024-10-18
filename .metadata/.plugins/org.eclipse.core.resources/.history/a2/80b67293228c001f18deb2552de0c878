@@ -1,0 +1,33 @@
+/**
+ * 
+ */
+package rimelSite.scraping;
+
+import java.io.IOException;
+
+/**
+ * 
+ */
+public class RimelSiteMain {
+
+	/**
+	 * @param args
+	 */
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+/*		RimelSiteScrapingWeb rssReader = new RimelSiteScrapingWeb("https://mascotasdezero.com/rss.php");
+        JSONArray rssFeedJson = rssReader.getRssFeedAsJson();
+        System.out.println(rssFeedJson.toString(2)); */
+		
+		try {
+            RssFeedServer rssFeedServer = new RssFeedServer("src/main/webapp/url.txt", 8000);
+            rssFeedServer.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+
+}

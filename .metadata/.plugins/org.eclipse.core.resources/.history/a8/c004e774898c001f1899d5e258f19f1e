@@ -1,0 +1,41 @@
+/* src/main/webapp/styles.css */
+body { 
+    font-family: Arial, sans-serif; 
+    background-color: #f4f4f4; 
+    padding: 20px; 
+}
+#container #feed {
+	width: 65%;
+	height: auto;
+	margin: auto auto;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+	gap: 0.8vw;
+}
+.feed-item { 
+    background-color: #fff; 
+    padding: 15px; 
+    margin-bottom: 20px; 
+    border-radius: 5px; 
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); 
+}
+.feed-item h2 { 
+    margin: 0 0 10px; 
+    font-size: 24px; 
+}
+.feed-item p { 
+    margin: 5px 0; 
+    font-size: 16px; 
+}
+.feed-item a { 
+    color: #3498db; 
+    text-decoration: none; 
+}
+.feed-item a:hover { 
+    text-decoration: underline; 
+}
+footer nav {
+	width: 20%;
+	margin: auto auto;
+}

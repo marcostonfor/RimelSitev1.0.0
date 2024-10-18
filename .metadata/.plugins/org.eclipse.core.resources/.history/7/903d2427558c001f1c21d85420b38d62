@@ -1,0 +1,194 @@
+package rimelSite.scraping;
+
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpExchange;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+public class RssFeedServer {
+    private HttpServer server;
+    private Map<String, JSONArray> rssFeedsByUrl; // Map to store feeds by URL
+    private static final int ITEMS_PER_PAGE = 10; // Number of items per page
+
+    public RssFeedServer(String urlsFilePath, int port) throws IOException {
+        List<String> rssUrls = Files.readAllLines(Paths.get(urlsFilePath)); // Load URLs from file
+        rssFeedsByUrl = new HashMap<>();
+        for (String rssUrl : rssUrls) {
+            try {
+                RimelSiteScrapingWeb rssReader = new RimelSiteScrapingWeb(rssUrl);
+                rssFeedsByUrl.put(rssUrl, rssReader.getRssFeedAsJson());
+                System.out.println("Loaded feed from: " + rssUrl); // Log for each feed loaded
+            } catch (Exception e) {
+                System.err.println("Error loading RSS feed from URL: " + rssUrl + ". " + e.getMessage());
+            }
+        }
+        try {
+            server = HttpServer.create(new InetSocketAddress(port), 0); // Create server on specified port
+            System.out.println("Server created on port " + port); // Log successful server creation
+            setupEndpoints(); // Setup endpoints
+        } catch (IOException e) {
+            System.err.println("Failed to create server on port " + port + ": " + e.getMessage());
+            throw e; // Re-throw the exception to handle it properly
+        }
+    }
+
+    private void setupEndpoints() {
+        // Endpoint to return RSS feed as JSON
+    	// Endpoint to return RSS feed as HTML
+    	server.createContext("/rssfeed", new HttpHandler() {
+    	    @Override
+    	    public void handle(HttpExchange exchange) throws IOException {
+    	        if ("GET".equals(exchange.getRequestMethod())) {
+    	            String query = exchange.getRequestURI().getQuery();
+    	            Map<String, String> params = queryToMap(query);
+    	            String rssUrl = params.get("url");
+    	            int page = Integer.parseInt(params.getOrDefault("page", "1"));
+
+    	            if (rssFeedsByUrl.containsKey(rssUrl)) {
+    	                JSONArray rssFeedJson = rssFeedsByUrl.get(rssUrl);
+    	                JSONArray paginatedFeed = paginateFeed(rssFeedJson, page);
+
+    	                JSONObject responseJson = new JSONObject();
+    	                responseJson.put("feed", paginatedFeed);
+    	                responseJson.put("url", rssUrl);
+    	                responseJson.put("page", page);
+    	                responseJson.put("totalPages", (int) Math.ceil(rssFeedJson.length() / (double) ITEMS_PER_PAGE));
+
+    	                String response = "<!DOCTYPE html>" +
+    	                                  "<html>" +
+    	                                  "<head>" +
+    	                                  "<title>RSS Feed</title>" +
+    	                                  "<link rel=\"stylesheet\" type=\"text/css\" href=\"/styles.css\">" +
+    	                                  "</head>" +
+    	                                  "<body>" +
+    	                                  "<h1>RSS Feed</h1>" +
+    	                                  "<h2>" + rssUrl + "</h2>" +
+    	                                  "<p>Page " + page + " of " + responseJson.getInt("totalPages") + "</p>" +
+    	                                  "<ul>";
+    	                for (int i = 0; i < paginatedFeed.length(); i++) {
+    	                    JSONObject item = paginatedFeed.getJSONObject(i);
+    	                    response += "<li><a href=\"" + item.getString("link") + "\">" + item.getString("title") + "</a></li>";
+    	                }
+    	                response += "</ul>" +
+    	                            "<nav>" +
+    	                            "<ul>" +
+    	                            "<li><a href=\"?url=" + rssUrl + "&page=" + (page - 1) + "\">Previous</a></li>" +
+    	                            "<li><a href=\"?url=" + rssUrl + "&page=" + (page + 1) + "\">Next</a></li>" +
+    	                            "</ul>" +
+    	                            "</nav>" +
+    	                            "</body>" +
+    	                            "</html>";
+
+    	                exchange.getResponseHeaders().set("Content-Type", "text/html");
+    	                exchange.sendResponseHeaders(200, response.getBytes().length);
+    	                OutputStream os = exchange.getResponseBody();
+    	                os.write(response.getBytes());
+    	                os.close();
+    	            } else {
+    	                String errorMessage = "RSS URL not found: " + rssUrl;
+    	                exchange.sendResponseHeaders(404, errorMessage.length());
+    	                OutputStream os = exchange.getResponseBody();
+    	                os.write(errorMessage.getBytes());
+    	                os.close();
+    	            }
+    	        } else {
+    	            exchange.sendResponseHeaders(405, -1); // 405 Method Not Allowed
+    	        }
+    	    }
+    	});
+
+     // Endpoint to return RSS feed as HTML
+        server.createContext("/", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                if ("GET".equals(exchange.getRequestMethod())) {
+                    // ... (código anterior)
+
+                    // Envía la respuesta al cliente
+                	// Envía la respuesta al cliente
+                	exchange.getResponseHeaders().set("Content-Type", "text/html");
+                	exchange.getResponseHeaders().set("Connection", "keep-alive");
+                	exchange.sendResponseHeaders(200, -1);
+                	OutputStream os = exchange.getResponseBody();
+                	exchange.getResponseBody().write(response.toString().getBytes());
+                	os.close();
+                    exchange.getResponseBody().close();
+                } else {
+                    exchange.sendResponseHeaders(405, -1); // 405 Method Not Allowed
+                }
+            }
+        });
+
+
+
+        // Endpoint para el archivo CSS
+        server.createContext("/styles.css", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                if ("GET".equals(exchange.getRequestMethod())) {
+                    byte[] response = Files.readAllBytes(Paths.get("src/main/webapp/styles.css"));
+                    exchange.getResponseHeaders().set("Content-Type", "text/css");
+                    exchange.sendResponseHeaders(200, response.length);
+                    OutputStream os = exchange.getResponseBody();
+                    os.write(response);
+                    os.close();
+                } else {
+                    exchange.sendResponseHeaders(405, -1); // 405 Method Not Allowed
+                }
+            }
+        });
+    }
+
+    private JSONArray paginateFeed(JSONArray feed, int page) {
+        JSONArray paginatedFeed = new JSONArray();
+        int start = (page - 1) * ITEMS_PER_PAGE;
+        int end = Math.min(start + ITEMS_PER_PAGE, feed.length());
+        for (int i = start; i < end; i++) {
+            paginatedFeed.put(feed.getJSONObject(i));
+        }
+        return paginatedFeed;
+    }
+
+    private Map<String, String> queryToMap(String query) {
+        Map<String, String> result = new HashMap<>();
+        if (query != null) {  // Verifica si la consulta no es nula
+            for (String param : query.split("&")) {
+                String[] entry = param.split("=");
+                result.put(entry[0], entry.length > 1 ? entry[1] : "");
+            }
+        }
+        return result;
+    }
+
+
+    public static void main(String[] args) throws IOException {
+        RssFeedServer server = new RssFeedServer("src/main/webapp/url.txt", 8000);
+        server.start();
+    }
+
+    public void start() {
+        try {
+            server.start();
+            System.out.println("Server started successfully.");
+        } catch (Exception e) {
+            System.err.println("Error starting server: " + e.getMessage());
+            e.printStackTrace(); // For detailed error tracing
+        }
+    }
+
+    public void stop() {
+        server.stop(0);
+    }
+}

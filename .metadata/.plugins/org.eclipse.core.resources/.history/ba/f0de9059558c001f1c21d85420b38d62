@@ -1,0 +1,77 @@
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.rometools.fetcher.FeedFetcher;
+import com.rometools.fetcher.impl.SyndFeedFetcherImpl;
+import com.rometools.fetcher.impl.HttpURLFeedFetcher;
+import com.rometools.fetcher.impl.FeedFetcherCache;
+import com.rometools.fetcher.impl.SyndFeedInfo;
+import com.rometools.fetcher.impl.UrlFetcherFactory;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+public class RssFeedServer {
+    public static void main(String[] args) throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+        server.createContext("/", new MyHandler());
+        server.setExecutor(null); // creates a default executor
+        server.start();
+        System.out.println("Servidor escuchando en puerto 8000");
+    }
+
+    static class MyHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("GET".equals(exchange.getRequestMethod())) {
+                // Obtiene los feeds RSS desde Internet
+                List<SyndFeed> feeds = fetchRssFeeds();
+
+                // Crea un documento HTML con los resultados de los feeds
+                String html = createHtml(feeds);
+
+                // Envía la respuesta al cliente
+                exchange.getResponseHeaders().set("Content-Type", "text/html");
+                exchange.sendResponseHeaders(200, html.getBytes().length);
+                OutputStream os = exchange.getResponseBody();
+                os.write(html.getBytes());
+                os.close();
+            } else {
+                exchange.sendResponseHeaders(405, -1); // 405 Method Not Allowed
+            }
+        }
+
+        private List<SyndFeed> fetchRssFeeds() throws Exception {
+            // Configura el fetcher de feeds RSS
+            UrlFetcherFactory urlFetcherFactory = new HttpURLFeedFetcher();
+            FeedFetcherCache cache = new FeedFetcherCache(urlFetcherFactory);
+            FeedFetcher feedFetcher = new SyndFeedFetcherImpl(cache);
+
+            // Obtiene los feeds RSS desde Internet
+            List<SyndFeed> feeds = new ArrayList<>();
+            feeds.add(feedFetcher.retrieveFeed(new SyndFeedInfo("https://www.example.com/feed1.rss")));
+            feeds.add(feedFetcher.retrieveFeed(new SyndFeedInfo("https://www.example.com/feed2.rss")));
+
+            return feeds;
+        }
+
+        private String createHtml(List<SyndFeed> feeds) {
+            StringBuilder html = new StringBuilder();
+            html.append("<html><body>");
+            for (SyndFeed feed : feeds) {
+                html.append("<h1>").append(feed.getTitle()).append("</h1>");
+                for (SyndEntry entry : feed.getEntries()) {
+                    html.append("<h2>").append(entry.getTitle()).append("</h2>");
+                    html.append("<p>").append(entry.getDescription().getValue()).append("</p>");
+                }
+            }
+            html.append("</body></html>");
+            return html.toString();
+        }
+    }
+}

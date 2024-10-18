@@ -1,0 +1,28 @@
+/**
+ * 
+ */
+package rimelSite.scraping;
+
+import java.io.IOException;
+
+/**
+ * 
+ */
+public class RimelSiteMain {
+
+	/**
+	 * @param args
+	 */
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		try {
+            RssFeedServer rssFeedServer = new RssFeedServer("https://protectorabcn.es/feed/", 8000);
+            rssFeedServer.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+
+}

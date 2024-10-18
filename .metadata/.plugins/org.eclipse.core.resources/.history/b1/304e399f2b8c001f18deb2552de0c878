@@ -1,0 +1,80 @@
+/**
+ * 
+ */
+package rimelSite.scraping;
+
+/**
+ * 
+ */
+import java.net.URL;
+import java.net.URLConnection;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class RimelSiteScrapingWeb {
+    
+private String rssUrl;
+
+    // private String rssUrl = "https://mascotasdezero.com/rss.php"; // reemplaza con la URL del feed RSS que deseas obtener
+    RimelSiteScrapingWeb(String rssUrl) {
+       this.setRssUrl(rssUrl);
+
+    }
+
+	/**
+	 * @return the rssUrl
+	 */
+	public String getRssUrl() {
+		return rssUrl;
+	}
+
+	/**
+	 * @param rssUrl the rssUrl to set
+	 */
+	public void setRssUrl(String rssUrl) {
+		this.rssUrl = rssUrl;
+	}
+	
+    @SuppressWarnings("deprecation")
+	public JSONArray getRssFeedAsJson() {
+        JSONArray jsonArray = new JSONArray();
+        try {
+            URL url = new URL(rssUrl);
+            URLConnection connection = url.openConnection();
+            InputStream inputStream = connection.getInputStream();
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(inputStream);
+            NodeList items = doc.getElementsByTagName("item");
+
+            for (int i = 0; i < items.getLength(); i++) {
+                Element item = (Element) items.item(i);
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("title", item.getElementsByTagName("title").item(0).getTextContent());
+                jsonObject.put("link", item.getElementsByTagName("link").item(0).getTextContent());
+                jsonObject.put("description", item.getElementsByTagName("description").item(0).getTextContent());
+                jsonObject.put("pubDate", item.getElementsByTagName("pubDate").item(0).getTextContent());
+                jsonArray.put(jsonObject);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return jsonArray;
+    }
+
+}
+
+
